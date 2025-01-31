@@ -11,7 +11,7 @@ env:
   IMAGE_NAME: test-arm-runner
   IMAGE_VERSION: latest
   CONTAINERS_ROOT: /home/runner/.local/share/containers
-  TMPDIR: /home/runner/.local/share/containers/tmp
+  # TMPDIR: /home/runner/.local/share/containers/tmp
 
 permissions:
   contents: read
@@ -38,23 +38,13 @@ jobs:
 
       # - run: mkdir -p $TMPDIR
 
-      - name: Install some tools
+      - name: Install container tools
         run: sudo apt-get install podman buildah jq
 
-      - name: Check tools
+      - name: Get platform tag
         run: |
-          podman --version
-          buildah --version
-          jq --version
-
-      - name: Get platform pair
-        run: |
-          platform_info=$(docker info --format '{{.OSType}}/{{.Architecture}}')
-          platform_pair=$(echo "$platform_info" | sed 's/\//-/g')
-          echo "PLATFORM_PAIR=${platform_pair}" >> $GITHUB_ENV
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          platform=$(podman info --format='{{.Version.OsArch}}' | sed 's/\//-/g')
+          echo "PLATFORM=${platform}" >> $GITHUB_ENV
 
       - name: Log in to the GitHub Container registry
         uses: redhat-actions/podman-login@v1
@@ -63,18 +53,18 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+  
       - name: Build container image
         id: build-image
         uses: redhat-actions/buildah-build@v2
         with:
           context: ./containers
           image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_VERSION }}-builder latest-builder
+          tags: ${{ env.IMAGE_VERSION }} latest
           layers: true
           oci: true
-          build-args: |
-            ESMINI_IMAGE_NAME=${{env.REGISTRY}}}/${{ env.IMAGE_NAME }}
-            ESMINI_VERSION=${{ env.IMAGE_VERSION }}
           extra-args: |
             --target test-arm-runner
           containerfiles: |
