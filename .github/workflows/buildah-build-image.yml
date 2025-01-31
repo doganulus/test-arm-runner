@@ -80,13 +80,13 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ steps.build.outputs.image }}
-          digestfile: ${{ runner.temp }}/digests/digest-image
+          digestfile: ${{ runner.temp }}/digest-image
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
         with:
           name: digest-image-${{ env.PLATFORM }}
-          path: ${{ runner.temp }}/digests/*
+          path: ${{ runner.temp }}/digest-image
           if-no-files-found: error
           retention-days: 1
 
