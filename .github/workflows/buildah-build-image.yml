@@ -65,7 +65,7 @@ jobs:
         with:
           context: ./containers
           image: ${{ env.IMAGE_NAME }}
-          # tags: ${{ env.IMAGE_VERSION }} latest
+          tags: ${{ env.IMAGE_VERSION }} latest
           layers: true
           oci: true
           extra-args: |
@@ -80,6 +80,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ steps.build.outputs.image }}
+          tags: ${{ steps.build.outputs.tags }}
           digestfile: ${{ runner.temp }}/digest-image-${{ env.PLATFORM }}
 
       - name: Upload digest
@@ -90,31 +91,31 @@ jobs:
           if-no-files-found: error
           retention-days: 1
 
-  merge:
-    name: Merge container images
-    runs-on: ubuntu-24.04
-    needs: build
-    steps:
-      - run: mkdir -p $TMPDIR
-      - name: Download digests
-        uses: actions/download-artifact@v4
-        with:
-          path: ${{ runner.temp }}/digests
-          pattern: digest-*
-          merge-multiple: true
+  # merge:
+  #   name: Merge container images
+  #   runs-on: ubuntu-24.04
+  #   needs: build
+  #   steps:
+  #     - run: mkdir -p $TMPDIR
+  #     - name: Download digests
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         path: ${{ runner.temp }}/digests
+  #         pattern: digest-*
+  #         merge-multiple: true
 
-      - name: Log in to the GitHub Container registry
-        uses: redhat-actions/podman-login@v1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Log in to the GitHub Container registry
+  #       uses: redhat-actions/podman-login@v1
+  #       with:
+  #         registry: ${{ env.REGISTRY }}
+  #         username: ${{ github.repository_owner }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Create manifest list and push
-        run: |
-          buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          for digest in ${{ runner.temp }}/digests/digest-image-*; do
-            echo "Adding $(cat $digest)"
-            buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(cat $digest)
-          done
-          buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
+  #     - name: Create manifest list and push
+  #       run: |
+  #         buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+  #         for digest in ${{ runner.temp }}/digests/digest-image-*; do
+  #           echo "Adding $(cat $digest)"
+  #           buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(cat $digest)
+  #         done
+  #         buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
