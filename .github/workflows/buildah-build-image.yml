@@ -70,7 +70,7 @@ jobs:
           oci: true
           extra-args: |
             --target test-arm-runner
-            --output type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+            --output type=local,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
           containerfiles: |
             ./containers/test-arm-runner/Dockerfile
 
@@ -91,7 +91,9 @@ jobs:
   merge:
     name: Merge container images
     runs-on: ubuntu-24.04
+    needs: build
     steps:
+      - run: mkdir -p $TMPDIR
       - name: Push to GitHub Container Repository
         if: github.ref == 'refs/heads/main'
         id: push-image-ghcr
