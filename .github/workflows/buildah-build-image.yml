@@ -86,7 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: digest-image-${{ env.PLATFORM }}
-          path: ${{ runner.temp }}/digest-image
+          path: ${{ runner.temp }}/digest-image-${{ env.PLATFORM }}
           if-no-files-found: error
           retention-days: 1
 
@@ -113,7 +113,8 @@ jobs:
       - name: Create manifest list and push
         run: |
           buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          for digest in ${{ runner.temp }}/digests; do
+          for digest in ${{ runner.temp }}/digests/digest-image-*; do
+            echo "Adding $(cat $digest)"
             buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(cat $digest)
           done
           buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
