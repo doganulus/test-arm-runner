@@ -65,7 +65,7 @@ jobs:
         with:
           context: ./containers
           image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.IMAGE_VERSION }} latest
+          # tags: ${{ env.IMAGE_VERSION }} latest
           layers: true
           oci: true
           extra-args: |
@@ -80,7 +80,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ steps.build.outputs.image }}
-          tags: ${{ steps.build.outputs.tags }}
+          # tags: ${{ steps.build.outputs.tags }}
           digestfile: ${{ runner.temp }}/digest-image-${{ env.PLATFORM }}
 
       - name: Upload digest
