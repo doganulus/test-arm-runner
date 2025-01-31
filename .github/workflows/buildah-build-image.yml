@@ -116,6 +116,6 @@ jobs:
           buildah manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           for digest in ${{ runner.temp }}/digests/digest-image-*; do
             echo "Adding $(cat $digest)"
-            # buildah manifest add ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(cat $digest)
+            buildah manifest add --artifact ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest $(cat $digest)
           done
           # buildah manifest push --all ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 
