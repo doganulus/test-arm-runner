@@ -1,0 +1,87 @@
+name: buildah-build-image
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/buildah-build-image.yml # Self-trigger
+      - containers/test-arm-runner/Dockerfile
+
+env:
+  REGISTRY: ghcr.io/doganulus
+  IMAGE_NAME: test-arm-runner
+  IMAGE_VERSION: latest
+  CONTAINERS_ROOT: /home/runner/.local/share/containers
+  TMPDIR: /home/runner/.local/share/containers/tmp
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    name: Build arm64 image
+    runs-on: ubuntu-24.04-arm
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true 
+    steps:
+      # - name: Maximize build space
+      #   uses: easimon/maximize-build-space@v10
+      #   with:
+      #     root-reserve-mb: 2048 # Reserve disk space for repository
+      #     remove-dotnet: "true"
+      #     remove-android: "true"
+      #     remove-haskell: "true"
+      #     remove-codeql: "true"
+      #     remove-docker-images: "true"
+      #     build-mount-path: ${{ env.CONTAINERS_ROOT }} # The remaining space only for container build
+
+      # - run: mkdir -p $TMPDIR
+
+      - name: Check tools
+        run: |
+          podman --version
+          buildah --version
+          jq --version
+
+      - name: Get platform pair
+        run: |
+          platform_info=$(docker info --format '{{.OSType}}/{{.Architecture}}')
+          platform_pair=$(echo "$platform_info" | sed 's/\//-/g')
+          echo "PLATFORM_PAIR=${platform_pair}" >> $GITHUB_ENV
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the GitHub Container registry
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build container image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          context: ./containers
+          image: ${{ env.IMAGE_NAME }}
+          tags: ${{ env.IMAGE_VERSION }}-builder latest-builder
+          layers: true
+          oci: true
+          build-args: |
+            ESMINI_IMAGE_NAME=${{env.REGISTRY}}}/${{ env.IMAGE_NAME }}
+            ESMINI_VERSION=${{ env.IMAGE_VERSION }}
+          extra-args: |
+            --target test-arm-runner
+          containerfiles: |
+            ./containers/test-arm-runner/Dockerfile
+
+      - name: Push to GitHub Container Repository
+        if: github.ref == 'refs/heads/main'
+        id: push-image-ghcr
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
