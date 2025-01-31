@@ -80,7 +80,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: ${{ steps.build.outputs.image }}
-          digestfile: ${{ runner.temp }}/digest-image
+          digestfile: ${{ runner.temp }}/digest-image-${{ env.PLATFORM }}
 
       - name: Upload digest
         uses: actions/upload-artifact@v4
