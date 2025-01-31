@@ -119,4 +119,4 @@ jobs:
             echo "Adding $(cat $digest)"
             buildah manifest add $REPO:latest $REPO@$(cat $digest)
           done
-          # buildah manifest push --all $REPO:latest docker://$REPO:latest
+          buildah manifest push --all $REPO:latest docker://$REPO:latest
