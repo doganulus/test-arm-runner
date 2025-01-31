@@ -38,6 +38,9 @@ jobs:
 
       # - run: mkdir -p $TMPDIR
 
+      - name: Install xmllint
+        run: apt-get install podman buildah jq
+        
       - name: Check tools
         run: |
           podman --version
